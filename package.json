@@ -1,0 +1,22 @@
+{
+  "name": "deneric2",
+  "version": "1.0.0",
+  "description": "",
+  "main": "src/Deneric2.ts",
+  "scripts": {
+    "tsc": "tsc",
+    "test": "mocha -r ts-node/register 'test/**/*.test.ts'"
+  },
+  "author": "duydb",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/chai": "^4.2.21",
+    "@types/lodash": "^4.14.172",
+    "@types/mocha": "^9.0.0",
+    "chai": "^4.3.4",
+    "lodash": "^4.17.21",
+    "mocha": "^9.1.1",
+    "ts-node": "^10.2.1",
+    "typescript": "^4.4.2"
+  }
+}
