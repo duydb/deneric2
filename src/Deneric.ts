@@ -2,30 +2,15 @@ import get from 'lodash/get'
 import set from 'lodash/set'
 import cloneDeep from 'lodash/cloneDeep'
 import isObject from 'lodash/isObject'
+import isEmpty from 'lodash/isEmpty'
 
 export type SingleType = StringConstructor | NumberConstructor | BooleanConstructor | ArrayConstructor | ObjectConstructor | Deneric | typeof Deneric
 export type TDataType = SingleType | ComplexDataType
 export type DenericSchema = { [key: string]: [dataPath: string, dataType: TDataType, jsonIgnore?: boolean] }
 type Newable = { new(value?: any): Deneric }
 
-function getDefaultValue(dataType: TDataType) {
-  switch (dataType) {
-    case String:
-      return ''
-    case Number:
-      return 0
-    case Boolean:
-      return false
-    case Array:
-      return []
-    case Object:
-      return {}
-  }
-  return undefined
-}
-
 abstract class ComplexDataType {
-  abstract itemType: SingleType
+  abstract itemType: SingleType | ComplexDataType
 
   isArray: boolean = false
   isMap: boolean = false
@@ -33,14 +18,14 @@ abstract class ComplexDataType {
 
 class ArrayDataType extends ComplexDataType {
   isArray = true
-  constructor(public itemType: SingleType) {
+  constructor(public itemType: SingleType | ComplexDataType) {
     super()
   }
 }
 
 class MapDataType extends ComplexDataType {
   isMap = true
-  constructor(public itemType: SingleType) {
+  constructor(public itemType: SingleType | ComplexDataType) {
     super()
   }
 }
@@ -65,11 +50,13 @@ const Utils = Object.freeze({
         return Array.isArray(data) ? data.map(item => Utils.getValueFromJson(item, complexDataType.itemType, Utils.getDefaultValue(complexDataType.itemType))) : defaultValue
       }
       if (complexDataType.isMap) {
-        data = isObject(data) ? data : {}
-        return Object.keys(data).reduce((prev, key) => {
-          set(prev, key, Utils.getValueFromJson(data[key], complexDataType.itemType, Utils.getDefaultValue(complexDataType.itemType)))
-          return prev
-        }, {})
+        if (isObject(data)) {
+          return Object.keys(data).reduce((prev, key) => {
+            set(prev, key, Utils.getValueFromJson(get(data, key), complexDataType.itemType, Utils.getDefaultValue(complexDataType.itemType)))
+            return prev
+          }, {})
+        }
+        return defaultValue
       }
     }
 
@@ -130,8 +117,8 @@ const Utils = Object.freeze({
 })
 
 abstract class Deneric {
-  static Array = (dataType: SingleType) => new ArrayDataType(dataType)
-  static Map = (valueDataType: SingleType) => new MapDataType(valueDataType)
+  static Array = (dataType: TDataType) => new ArrayDataType(dataType)
+  static Map = (valueDataType: TDataType) => new MapDataType(valueDataType)
 
   _schema: DenericSchema
 
@@ -147,7 +134,7 @@ abstract class Deneric {
     if (this._schema) {
       Object.keys(this._schema).forEach(key => {
         const [dataPath, dataType] = this._schema[key]
-        const defaultValue = get(this, key) ?? getDefaultValue(dataType)
+        const defaultValue = get(this, key) ?? Utils.getDefaultValue(dataType)
         const value = Utils.getValueFromJson(cloneDeep(get(data, dataPath)), dataType, defaultValue)
         set(this, key, value)
       })
