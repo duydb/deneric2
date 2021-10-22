@@ -1,6 +1,6 @@
 import { it, describe } from 'mocha'
 import { expect } from 'chai'
-import Deneric, { DenericSchema } from '../src/Deneric'
+import Deneric, { DenericSchema } from '../src/deneric'
 
 class Student extends Deneric {
   full_name: string = 'noname'
@@ -106,7 +106,7 @@ describe('fromJson', () => {
   it('checking schema instance', () => {
     const r1 = new Student(json1)
     const r2 = new Student(json1)
-    expect(r1._schema).to.be.eq(r2._schema)
+    expect(r1.__schema__).to.be.eq(r2.__schema__)
   })
   it('checking parse data from schema', () => {
     const r = new Student(json1)

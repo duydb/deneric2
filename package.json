@@ -15,11 +15,11 @@
   ],
   "bugs": {
     "url": "https://github.com/duydb/deneric2/issues"
-},
+  },
   "scripts": {
     "tsc": "tsc",
     "test": "mocha -r ts-node/register 'test/**/*.test.ts'",
-    "build": "babel source --out-dir dist",
+    "build": "webpack build",
     "prepublish": "npm run build && npm set registry https://registry.npmjs.org"
   },
   "author": "duydb <duydbvn@gmail.com>",
@@ -28,10 +28,14 @@
     "@types/chai": "^4.2.21",
     "@types/lodash": "^4.14.172",
     "@types/mocha": "^9.0.0",
+    "@types/node": "^16.11.3",
     "chai": "^4.3.4",
     "lodash": "^4.17.21",
     "mocha": "^9.1.1",
+    "ts-loader": "^9.2.6",
     "ts-node": "^10.2.1",
-    "typescript": "^4.4.2"
+    "typescript": "^4.4.2",
+    "webpack": "^5.59.1",
+    "webpack-cli": "^4.9.1"
   }
 }

@@ -2,12 +2,11 @@ import get from 'lodash/get'
 import set from 'lodash/set'
 import cloneDeep from 'lodash/cloneDeep'
 import isObject from 'lodash/isObject'
-import isEmpty from 'lodash/isEmpty'
 
-export type SingleType = StringConstructor | NumberConstructor | BooleanConstructor | ArrayConstructor | ObjectConstructor | Deneric | typeof Deneric
-export type TDataType = SingleType | ComplexDataType
-export type DenericSchema = { [key: string]: [dataPath: string, dataType: TDataType, jsonIgnore?: boolean] }
+type SingleType = StringConstructor | NumberConstructor | BooleanConstructor | ArrayConstructor | ObjectConstructor | Deneric | typeof Deneric
+type TDataType = SingleType | ComplexDataType
 type Newable = { new(value?: any): Deneric }
+export type DenericSchema = { [key: string]: [dataPath: string, dataType: TDataType, jsonIgnore?: boolean] }
 
 abstract class ComplexDataType {
   abstract itemType: SingleType | ComplexDataType
@@ -120,10 +119,10 @@ abstract class Deneric {
   static Array = (dataType: TDataType) => new ArrayDataType(dataType)
   static Map = (valueDataType: TDataType) => new MapDataType(valueDataType)
 
-  _schema: DenericSchema
+  __schema__: DenericSchema
 
   constructor(schema: DenericSchema) {
-    this._schema = schema
+    this.__schema__ = schema
   }
 
   clone<T extends Deneric>(): T {
@@ -131,9 +130,9 @@ abstract class Deneric {
   }
 
   fromJson<T extends Deneric>(data: any): T {
-    if (this._schema) {
-      Object.keys(this._schema).forEach(key => {
-        const [dataPath, dataType] = this._schema[key]
+    if (this.__schema__) {
+      Object.keys(this.__schema__).forEach(key => {
+        const [dataPath, dataType] = this.__schema__[key]
         const defaultValue = get(this, key) ?? Utils.getDefaultValue(dataType)
         const value = Utils.getValueFromJson(cloneDeep(get(data, dataPath)), dataType, defaultValue)
         set(this, key, value)
@@ -146,10 +145,10 @@ abstract class Deneric {
 
   toJson(): object {
     const json = {}
-    if (this._schema) {
-      Object.keys(this._schema).forEach(key => {
-        if (this._schema) {
-          const [dataPath, dataType, jsonIgnore] = this._schema[key]
+    if (this.__schema__) {
+      Object.keys(this.__schema__).forEach(key => {
+        if (this.__schema__) {
+          const [dataPath, dataType, jsonIgnore] = this.__schema__[key]
           if (!jsonIgnore) {
             set(json, dataPath, Utils.getValueFromDeneric(cloneDeep(get(this, key)), dataType, key))
           }
