@@ -19,7 +19,11 @@ yarn add deneric2
 
 ### Deneric
 Deneric is an abstract class. Your class must be extended from Deneric and its constructor have to set your schema in it.
-
+| Methods        | Detail                   |
+| -------------- | ------------------------ |
+| clone()        | Clone instance           |
+| fromJson(json) | parse json to Entity     |
+| toJson()       | transform entity to Json |
 #### Example
 ```ts
 import Deneric, { DenericSchema } from 'deneric2'
