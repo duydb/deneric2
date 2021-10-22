@@ -6,7 +6,7 @@ class Student extends Deneric {
   full_name: string = 'noname'
   age: number = -1
   is_male: boolean = false
-  roles: (string | number)[] = [100]
+  roles: (string | number)[] = ['100']
   jobs: { [key: string]: string[] } = { 2023: ['2023'] }
 
   private static _schema: DenericSchema = {
@@ -80,7 +80,7 @@ const json4 = {
   }
 }
 
-describe('Options tests', () => {
+describe('fromJson', () => {
   it('checking schema instance', () => {
     const r1 = new Student(json1)
     const r2 = new Student(json1)
@@ -94,23 +94,23 @@ describe('Options tests', () => {
     expect(r.roles).to.be.deep.equal(json1.others.roles)
     expect(r.jobs).to.be.deep.equal(json1.jobs)
   });
-  it('checking default value (missing schema)', () => {
+  it('checking parse default value (missing schema)', () => {
     const r = new Student(json2)
     expect(r.full_name).to.be.eq('noname')
     expect(r.age).to.be.eq(-1)
     expect(r.is_male).to.be.eq(false)
-    expect(r.roles).to.be.deep.equal([100])
+    expect(r.roles).to.be.deep.equal(['100'])
     expect(r.jobs).to.be.deep.equal({ 2023: ['2023'] })
   });
-  it('checking default value (wrong data type)', () => {
+  it('checking parse default value (wrong data type)', () => {
     const r = new Student(json3)
     expect(r.full_name).to.be.eq('noname')
     expect(r.age).to.be.eq(-1)
     expect(r.is_male).to.be.eq(false)
-    expect(r.roles).to.be.deep.equal([100])
+    expect(r.roles).to.be.deep.equal(['100'])
     expect(r.jobs).to.be.deep.equal({ 2023: ['2023'] })
   });
-  it('data type if Deneric', () => {
+  it('checking parse complex data type (Array, Map)', () => {
     const r = new ClassRoom()
     const r2 = r.fromJson<ClassRoom>(json4)
     console.log(r2)
@@ -125,13 +125,13 @@ describe('Options tests', () => {
     expect(r.students[1].full_name).to.be.eq('noname')
     expect(r.students[1].age).to.be.eq(-1)
     expect(r.students[1].is_male).to.be.eq(false)
-    expect(r.students[1].roles).to.be.deep.equal([100])
+    expect(r.students[1].roles).to.be.deep.equal(['100'])
     expect(r.students[1].jobs).to.be.deep.equal({ 2023: ['2023'] })
 
     expect(r.students[2].full_name).to.be.eq('noname')
     expect(r.students[2].age).to.be.eq(-1)
     expect(r.students[2].is_male).to.be.eq(false)
-    expect(r.students[2].roles).to.be.deep.equal([100])
+    expect(r.students[2].roles).to.be.deep.equal(['100'])
     expect(r.students[2].jobs).to.be.deep.equal({ 2023: ['2023'] })
 
     expect(r.monitor.full_name).to.be.eq(json1.profile.full_name)
@@ -149,13 +149,94 @@ describe('Options tests', () => {
     expect(r.mapStudents['json2'].full_name).to.be.eq('noname')
     expect(r.mapStudents['json2'].age).to.be.eq(-1)
     expect(r.mapStudents['json2'].is_male).to.be.eq(false)
-    expect(r.mapStudents['json2'].roles).to.be.deep.equal([100])
+    expect(r.mapStudents['json2'].roles).to.be.deep.equal(['100'])
     expect(r.mapStudents['json2'].jobs).to.be.deep.equal({ 2023: ['2023'] })
 
     expect(r.mapStudents['json3'].full_name).to.be.eq('noname')
     expect(r.mapStudents['json3'].age).to.be.eq(-1)
     expect(r.mapStudents['json3'].is_male).to.be.eq(false)
-    expect(r.mapStudents['json3'].roles).to.be.deep.equal([100])
+    expect(r.mapStudents['json3'].roles).to.be.deep.equal(['100'])
     expect(r.mapStudents['json3'].jobs).to.be.deep.equal({ 2023: ['2023'] })
   });
 });
+
+describe('toJson test', () => {
+  it('default', () => {
+    const r = new Student(json1)
+    const json = r.toJson() as typeof json1
+    console.log(json)
+    expect(json.profile.full_name).to.be.eq(json1.profile.full_name)
+    expect(json.profile.age).to.be.eq(json1.profile.age)
+    expect(json.others.is_male).to.be.eq(json1.others.is_male)
+    expect(json.others.roles).to.be.deep.equal(json1.others.roles)
+    expect(json.jobs).to.be.deep.equal(json1.jobs)
+  });
+  it('missing schema', () => {
+    const r = new Student(json2)
+    const json = r.toJson() as typeof json1
+    console.log(json)
+    expect(json.profile.full_name).to.be.eq('noname')
+    expect(json.profile.age).to.be.eq(-1)
+    expect(json.others.is_male).to.be.eq(false)
+    expect(json.others.roles).to.be.deep.equal(['100'])
+    expect(json.jobs).to.be.deep.equal({ 2023: ['2023'] })
+  });
+  it('wrong data type', () => {
+    const r = new Student(json3)
+    const json = r.toJson() as typeof json1
+    console.log(json)
+    expect(json.profile.full_name).to.be.eq('noname')
+    expect(json.profile.age).to.be.eq(-1)
+    expect(json.others.is_male).to.be.eq(false)
+    expect(json.others.roles).to.be.deep.equal(['100'])
+    expect(json.jobs).to.be.deep.equal({ 2023: ['2023'] })
+  });
+  it('complex data type (Array, Map)', () => {
+    const r = new ClassRoom()
+    r.fromJson<ClassRoom>(json4)
+    const json = r.toJson() as typeof json4
+    expect(json.my_student.length).to.be.eq(json4.my_student.length)
+
+    expect((json.my_student[0] as typeof json1).profile.full_name).to.be.eq(json1.profile.full_name)
+    expect((json.my_student[0] as typeof json1).profile.age).to.be.eq(json1.profile.age)
+    expect((json.my_student[0] as typeof json1).others.is_male).to.be.eq(json1.others.is_male)
+    expect((json.my_student[0] as typeof json1).others.roles).to.be.deep.equal(json1.others.roles)
+    expect((json.my_student[0] as typeof json1).jobs).to.be.deep.equal(json1.jobs)
+
+    expect((json.my_student[1] as typeof json1).profile.full_name).to.be.eq('noname')
+    expect((json.my_student[1] as typeof json1).profile.age).to.be.eq(-1)
+    expect((json.my_student[1] as typeof json1).others.is_male).to.be.eq(false)
+    expect((json.my_student[1] as typeof json1).others.roles).to.be.deep.equal(['100'])
+    expect((json.my_student[1] as typeof json1).jobs).to.be.deep.equal({ 2023: ['2023'] })
+
+    expect((json.my_student[2] as typeof json1).profile.full_name).to.be.eq('noname')
+    expect((json.my_student[2] as typeof json1).profile.age).to.be.eq(-1)
+    expect((json.my_student[2] as typeof json1).others.is_male).to.be.eq(false)
+    expect((json.my_student[2] as typeof json1).others.roles).to.be.deep.equal(['100'])
+    expect((json.my_student[2] as typeof json1).jobs).to.be.deep.equal({ 2023: ['2023'] })
+
+    expect(json.class_monitor.profile.full_name).to.be.eq(json1.profile.full_name)
+    expect(json.class_monitor.profile.age).to.be.eq(json1.profile.age)
+    expect(json.class_monitor.others.is_male).to.be.eq(json1.others.is_male)
+    expect(json.class_monitor.others.roles).to.be.deep.equal(json1.others.roles)
+    expect(json.class_monitor.jobs).to.be.deep.equal(json1.jobs)
+
+    expect((json.map_student['json1'] as typeof json1).profile.full_name).to.be.eq(json1.profile.full_name)
+    expect((json.map_student['json1'] as typeof json1).profile.age).to.be.eq(json1.profile.age)
+    expect((json.map_student['json1'] as typeof json1).others.is_male).to.be.eq(json1.others.is_male)
+    expect((json.map_student['json1'] as typeof json1).others.roles).to.be.deep.equal(json1.others.roles)
+    expect((json.map_student['json1'] as typeof json1).jobs).to.be.deep.equal(json1.jobs)
+
+    expect((json.map_student['json2'] as unknown as typeof json1).profile.full_name).to.be.eq('noname')
+    expect((json.map_student['json2'] as unknown as typeof json1).profile.age).to.be.eq(-1)
+    expect((json.map_student['json2'] as unknown as typeof json1).others.is_male).to.be.eq(false)
+    expect((json.map_student['json2'] as unknown as typeof json1).others.roles).to.be.deep.equal(['100'])
+    expect((json.map_student['json2'] as unknown as typeof json1).jobs).to.be.deep.equal({ 2023: ['2023'] })
+
+    expect((json.map_student['json3'] as unknown as typeof json1).profile.full_name).to.be.eq('noname')
+    expect((json.map_student['json3'] as unknown as typeof json1).profile.age).to.be.eq(-1)
+    expect((json.map_student['json3'] as unknown as typeof json1).others.is_male).to.be.eq(false)
+    expect((json.map_student['json3'] as unknown as typeof json1).others.roles).to.be.deep.equal(['100'])
+    expect((json.map_student['json3'] as unknown as typeof json1).jobs).to.be.deep.equal({ 2023: ['2023'] })
+  });
+})
