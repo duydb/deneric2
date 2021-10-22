@@ -2,12 +2,27 @@
   "name": "deneric2",
   "version": "1.0.0",
   "description": "",
-  "main": "src/Deneric2.ts",
+  "main": "dist/index.js",
+  "type": "dist/index.js",
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:duydb/deneric2.git"
+  },
+  "keywords": [
+    "deneric",
+    "JSON parser",
+    "normalize"
+  ],
+  "bugs": {
+    "url": "https://github.com/duydb/deneric2/issues"
+},
   "scripts": {
     "tsc": "tsc",
-    "test": "mocha -r ts-node/register 'test/**/*.test.ts'"
+    "test": "mocha -r ts-node/register 'test/**/*.test.ts'",
+    "build": "babel source --out-dir dist",
+    "prepublish": "npm run build && npm set registry https://registry.npmjs.org"
   },
-  "author": "duydb",
+  "author": "duydb <duydbvn@gmail.com>",
   "license": "ISC",
   "devDependencies": {
     "@types/chai": "^4.2.21",

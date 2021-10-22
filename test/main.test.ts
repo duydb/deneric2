@@ -1,5 +1,5 @@
-import { it, describe } from 'mocha';
-import { expect } from 'chai';
+import { it, describe } from 'mocha'
+import { expect } from 'chai'
 import Deneric, { DenericSchema } from '../src/Deneric'
 
 class Student extends Deneric {
@@ -9,7 +9,7 @@ class Student extends Deneric {
   roles: (string | number)[] = ['100']
   jobs: { [key: string]: string[] } = { 2023: ['2023'] }
 
-  private static _schema: DenericSchema = {
+  private static schema: DenericSchema = {
     full_name: ['profile.full_name', String],
     age: ['profile.age', Number],
     is_male: ['others.is_male', Boolean],
@@ -18,24 +18,46 @@ class Student extends Deneric {
   }
 
   constructor(data: any) {
-    super(Student._schema)
+    super(Student.schema)
     this.fromJson(data)
   }
 }
 
+class StudentIgnoreJob extends Deneric {
+  full_name: string = 'noname'
+  age: number = -1
+  is_male: boolean = false
+  roles: (string | number)[] = ['100']
+  jobs: { [key: string]: string[] } = { 2023: ['2023'] }
+
+  private static schema: DenericSchema = {
+    full_name: ['profile.full_name', String],
+    age: ['profile.age', Number],
+    is_male: ['others.is_male', Boolean],
+    roles: ['others.roles', Deneric.Array(String)],
+    jobs: ['jobs', Object, true],
+  }
+
+  constructor(data: any) {
+    super(StudentIgnoreJob.schema)
+    this.fromJson(data)
+  }
+}
+
+
 class ClassRoom extends Deneric {
-  monitor: Student = new Student({});
+  monitor: Student = new Student({})
   students: Student[] = []
   mapStudents: Record<string, Student> = {}
 
-  private static _schema: DenericSchema = {
+  private static schema: DenericSchema = {
     monitor: ['class_monitor', Student],
     students: ['my_student', Deneric.Array(Student)],
     mapStudents: ['map_student', Deneric.Map(Student)]
   }
 
   constructor() {
-    super(ClassRoom._schema)
+    super(ClassRoom.schema)
   }
 }
 
@@ -85,7 +107,7 @@ describe('fromJson', () => {
     const r1 = new Student(json1)
     const r2 = new Student(json1)
     expect(r1._schema).to.be.eq(r2._schema)
-  });
+  })
   it('checking parse data from schema', () => {
     const r = new Student(json1)
     expect(r.full_name).to.be.eq(json1.profile.full_name)
@@ -93,7 +115,7 @@ describe('fromJson', () => {
     expect(r.is_male).to.be.eq(json1.others.is_male)
     expect(r.roles).to.be.deep.equal(json1.others.roles)
     expect(r.jobs).to.be.deep.equal(json1.jobs)
-  });
+  })
   it('checking parse default value (missing schema)', () => {
     const r = new Student(json2)
     expect(r.full_name).to.be.eq('noname')
@@ -101,7 +123,7 @@ describe('fromJson', () => {
     expect(r.is_male).to.be.eq(false)
     expect(r.roles).to.be.deep.equal(['100'])
     expect(r.jobs).to.be.deep.equal({ 2023: ['2023'] })
-  });
+  })
   it('checking parse default value (wrong data type)', () => {
     const r = new Student(json3)
     expect(r.full_name).to.be.eq('noname')
@@ -109,11 +131,10 @@ describe('fromJson', () => {
     expect(r.is_male).to.be.eq(false)
     expect(r.roles).to.be.deep.equal(['100'])
     expect(r.jobs).to.be.deep.equal({ 2023: ['2023'] })
-  });
+  })
   it('checking parse complex data type (Array, Map)', () => {
     const r = new ClassRoom()
     const r2 = r.fromJson<ClassRoom>(json4)
-    console.log(r2)
     expect(r2.students.length).to.be.eq(json4.my_student.length)
 
     expect(r.students[0].full_name).to.be.eq(json1.profile.full_name)
@@ -157,41 +178,39 @@ describe('fromJson', () => {
     expect(r.mapStudents['json3'].is_male).to.be.eq(false)
     expect(r.mapStudents['json3'].roles).to.be.deep.equal(['100'])
     expect(r.mapStudents['json3'].jobs).to.be.deep.equal({ 2023: ['2023'] })
-  });
-});
+  })
+})
 
 describe('toJson test', () => {
-  it('default', () => {
+  it('toJson default', () => {
     const r = new Student(json1)
     const json = r.toJson() as typeof json1
-    console.log(json)
+
     expect(json.profile.full_name).to.be.eq(json1.profile.full_name)
     expect(json.profile.age).to.be.eq(json1.profile.age)
     expect(json.others.is_male).to.be.eq(json1.others.is_male)
     expect(json.others.roles).to.be.deep.equal(json1.others.roles)
     expect(json.jobs).to.be.deep.equal(json1.jobs)
-  });
-  it('missing schema', () => {
+  })
+  it('toJson missing schema', () => {
     const r = new Student(json2)
     const json = r.toJson() as typeof json1
-    console.log(json)
     expect(json.profile.full_name).to.be.eq('noname')
     expect(json.profile.age).to.be.eq(-1)
     expect(json.others.is_male).to.be.eq(false)
     expect(json.others.roles).to.be.deep.equal(['100'])
     expect(json.jobs).to.be.deep.equal({ 2023: ['2023'] })
-  });
-  it('wrong data type', () => {
+  })
+  it('toJson wrong data type', () => {
     const r = new Student(json3)
     const json = r.toJson() as typeof json1
-    console.log(json)
     expect(json.profile.full_name).to.be.eq('noname')
     expect(json.profile.age).to.be.eq(-1)
     expect(json.others.is_male).to.be.eq(false)
     expect(json.others.roles).to.be.deep.equal(['100'])
     expect(json.jobs).to.be.deep.equal({ 2023: ['2023'] })
-  });
-  it('complex data type (Array, Map)', () => {
+  })
+  it('toJson complex data type (Array, Map)', () => {
     const r = new ClassRoom()
     r.fromJson<ClassRoom>(json4)
     const json = r.toJson() as typeof json4
@@ -238,5 +257,24 @@ describe('toJson test', () => {
     expect((json.map_student['json3'] as unknown as typeof json1).others.is_male).to.be.eq(false)
     expect((json.map_student['json3'] as unknown as typeof json1).others.roles).to.be.deep.equal(['100'])
     expect((json.map_student['json3'] as unknown as typeof json1).jobs).to.be.deep.equal({ 2023: ['2023'] })
-  });
+  })
+})
+
+describe('jsonIgnore test', () => {
+  it('default', () => {
+    const r = new StudentIgnoreJob(json1)
+    const json = r.toJson() as typeof json1
+
+    expect(r.full_name).to.be.eq(json1.profile.full_name)
+    expect(r.age).to.be.eq(json1.profile.age)
+    expect(r.is_male).to.be.eq(json1.others.is_male)
+    expect(r.roles).to.be.deep.equal(json1.others.roles)
+    expect(r.jobs).to.be.deep.equal(json1.jobs)
+
+    expect(json.profile.full_name).to.be.eq(json1.profile.full_name)
+    expect(json.profile.age).to.be.eq(json1.profile.age)
+    expect(json.others.is_male).to.be.eq(json1.others.is_male)
+    expect(json.others.roles).to.be.deep.equal(json1.others.roles)
+    expect(json.jobs).to.be.deep.equal(undefined)
+  })
 })
