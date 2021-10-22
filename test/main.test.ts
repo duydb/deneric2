@@ -14,7 +14,7 @@ class Student extends Deneric {
     age: ['profile.age', Number],
     is_male: ['others.is_male', Boolean],
     roles: ['others.roles', Deneric.Array(String)],
-    jobs: ['jobs', Object],
+    jobs: ['jobs', Deneric.Map(Deneric.Array(String))]
   }
 
   constructor(data: any) {
@@ -122,6 +122,7 @@ describe('fromJson', () => {
     expect(r.age).to.be.eq(-1)
     expect(r.is_male).to.be.eq(false)
     expect(r.roles).to.be.deep.equal(['100'])
+    console.log(r)
     expect(r.jobs).to.be.deep.equal({ 2023: ['2023'] })
   })
   it('checking parse default value (wrong data type)', () => {
