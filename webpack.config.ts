@@ -2,8 +2,9 @@ const path = require('path');
 
 module.exports = {
   mode: 'production',
-  entry: './src/deneric.ts',
-  // devtool: 'inline-source-map',
+  entry: {
+    deneric: './src/deneric.ts'
+  },
   module: {
     rules: [
       {
@@ -17,7 +18,11 @@ module.exports = {
     extensions: ['.tsx', '.ts', '.js'],
   },
   output: {
-    filename: 'deneric.js',
     path: path.resolve(__dirname, 'dist'),
+    filename: '[name].js',
+    libraryTarget:'umd',
+    library: 'Deneric',
+    umdNamedDefine: true,
+    globalObject: 'this'
   }
 };

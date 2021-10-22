@@ -1,6 +1,7 @@
 import { it, describe } from 'mocha'
 import { expect } from 'chai'
-import Deneric, { DenericSchema } from '../src/deneric'
+import Deneric, { DenericSchema } from '../dist/deneric'
+// import Deneric, { DenericSchema } from '../src/deneric'
 
 class Student extends Deneric {
   full_name: string = 'noname'
@@ -122,7 +123,6 @@ describe('fromJson', () => {
     expect(r.age).to.be.eq(-1)
     expect(r.is_male).to.be.eq(false)
     expect(r.roles).to.be.deep.equal(['100'])
-    console.log(r)
     expect(r.jobs).to.be.deep.equal({ 2023: ['2023'] })
   })
   it('checking parse default value (wrong data type)', () => {
