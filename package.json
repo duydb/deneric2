@@ -1,7 +1,7 @@
 {
   "name": "deneric2",
   "version": "1.0.0",
-  "description": "",
+  "description": "JSON parser",
   "main": "dist/deneric.js",
   "types": "dist/deneric.d.ts",
   "repository": {
