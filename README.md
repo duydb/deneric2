@@ -2,12 +2,73 @@
 Deneric2 help you parsing data from Json Object into your Entity. 
 Save your time & safety when working with json.
 
-
-## Using
-- define your class and extends Deneric
-- define your class schema
+## Getting start
+### Install
+npm
+```bash
+npm install deneric2
+```
+Yarn
+```bash
+yarn add deneric2
+```
+### Using
+- Define your schema & class
 - using fromJson method to parsing Json object to your entity
-- using toJson method to transform your entity to Json Object with schema
+- using toJson method to transform your entity to Json Object
+
+### Deneric
+Deneric is an abstract class. Your class must be extended from Deneric and its constructor have to set your schema in it.
+
+#### Example
+```ts
+import Deneric, { DenericSchema } from 'deneric2'
+
+const SCHEMA: DenericSchema = {} // Your schema
+
+class MyClass extends Deneric { // Your class
+    constructor(){
+        super(SCHEMA)
+    }
+}
+```
+
+### DenericSchema
+DenericSchema is a object<`key`, `value`>. `key` is `String` and `value` is a `Tuple/Array` with rule:
+| DenericSchema       | Detail                                                                    |
+| ------------------- | ------------------------------------------------------------------------- |
+| DenericSchema.key   | key as your class proprety                                                |
+| DenericSchema.value | [`dataPath`: string, `dataType`: DenericDataType, `jsonIgnore`?: boolean] |
+
+
+### DenericDataType
+| DataType            | Description              | Example                                      |
+| ------------------- | ------------------------ | -------------------------------------------- |
+| String              | string                   | ``` ['data_path', String] ```                |
+| Number              | number                   | ``` ['data_path', Number] ```                |
+| Boolean             | boolean                  | ``` ['data_path', Boolean] ```               |
+| Array               | Array of any thing       | ``` ['data_path', Array] ```                 |
+| Object              | Object                   | ``` ['data_path', Object] ```                |
+| Deneric.Array       | Array of DenericDataType | ``` ['data_path', Deneric.Array(Number)] ``` |
+| Deneric.Map         | Map of DenericDataType   | ``` ['data_path', Deneric.Map(MyClass)] ```  |
+| Instance of Deneric | Your class               | ``` ['data_path', My Class] ```              |
+
+Notes:
+- Deneric.Array: Using to parse your search response
+- Deneric.Map: Using to parse your mget response
+
+#### Example
+```ts
+{
+    fullName: ['profile.full_name', String],
+    age: ['profile.age', Number],
+    isMale: ['profile.is_male', Boolean],
+    github: ['social.github', String, true] // is mean this property will be ignore when you call toJson method
+}
+```
+
+### Deneric
+
 
 ### Using Example:
 
@@ -92,20 +153,7 @@ And have function to get json with schema from `student1` (call: `student1.toJso
     }
 }
 ```
-
-## Data Types
-Deneric support all common data types:
-- String
-- Number
-- Boolean
-- Object
-
-And Deneric also support complexed type:
-- Deneric.Array // Deneric.Array( <DATA_TYPE> )
-- Deneric.Map // Deneric.Map( <DATA_TYPE> )
-- T extends Deneric // Eg: Student
-
-### For example:
+### Mores example:
 
 ```ts
 class ClassRoom extends Deneric {
@@ -125,26 +173,19 @@ class ClassRoom extends Deneric {
 }
 ```
 
-## Json Ignore
+## Json Ignore Example
 You can define schema to ignore property when call method toJson
 
-### Example
 ```ts
 import Deneric, { DenericSchema } from 'deneric2'
 
 class StudentIgnoreJob extends Deneric {
   fullName: string = 'noname'
-  age: number = -1
-  isMale: boolean = false
-  roles: string[] = ['ABC', 'DEF']
-  jobs: { [key: string]: string[] } = { 2021: ['Covid'] }
+  jobs: { [key: string]: string[] } = {}
 
   private static schema: DenericSchema = {
     fullName: ['profile.full_name', String],
-    age: ['profile.age', Number],
-    isMale: ['others.is_male', Boolean],
-    roles: ['others.roles', Deneric.Array(String)],
-    jobs: ['jobs', Object, true] // json ignore. This schema will be ignore when call toJson
+    jobs: ['jobs', Deneric.Map(Deneric.Array(String)), true] // json ignore. This schema will be ignore when call toJson
   }
 
   constructor() {
