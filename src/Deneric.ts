@@ -119,10 +119,13 @@ abstract class Deneric {
   static Array = (dataType: TDataType) => new ArrayDataType(dataType)
   static Map = (valueDataType: TDataType) => new MapDataType(valueDataType)
 
-  __schema__: DenericSchema
+  private __proto__!: { schema: DenericSchema }
 
   constructor(schema: DenericSchema) {
-    this.__schema__ = schema
+    if (!schema) {
+      throw new TypeError('Invalid schema: ' + this.constructor.name)
+    }
+    this.__proto__.schema = schema
   }
 
   clone<T extends Deneric>(): T {
@@ -130,25 +133,23 @@ abstract class Deneric {
   }
 
   fromJson<T extends Deneric>(data: any): T {
-    if (this.__schema__) {
-      Object.keys(this.__schema__).forEach(key => {
-        const [dataPath, dataType] = this.__schema__[key]
+    if (this.__proto__.schema) {
+      Object.keys(this.__proto__.schema).forEach(key => {
+        const [dataPath, dataType] = this.__proto__.schema[key]
         const defaultValue = get(this, key) ?? Utils.getDefaultValue(dataType)
         const value = Utils.getValueFromJson(cloneDeep(get(data, dataPath)), dataType, defaultValue)
         set(this, key, value)
       })
-    } else {
-      throw Error('Missing Schema')
     }
     return this as unknown as T
   }
 
   toJson(): object {
     const json = {}
-    if (this.__schema__) {
-      Object.keys(this.__schema__).forEach(key => {
-        if (this.__schema__) {
-          const [dataPath, dataType, jsonIgnore] = this.__schema__[key]
+    if (this.__proto__.schema) {
+      Object.keys(this.__proto__.schema).forEach(key => {
+        if (this.__proto__.schema) {
+          const [dataPath, dataType, jsonIgnore] = this.__proto__.schema[key]
           if (!jsonIgnore) {
             set(json, dataPath, Utils.getValueFromDeneric(cloneDeep(get(this, key)), dataType, key))
           }

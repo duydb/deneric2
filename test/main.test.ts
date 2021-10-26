@@ -1,7 +1,6 @@
 import { it, describe } from 'mocha'
 import { expect } from 'chai'
 import Deneric, { DenericSchema } from '../dist/deneric'
-// import Deneric, { DenericSchema } from '../src/deneric'
 
 class Student extends Deneric {
   full_name: string = 'noname'
@@ -10,16 +9,14 @@ class Student extends Deneric {
   roles: (string | number)[] = ['100']
   jobs: { [key: string]: string[] } = { 2023: ['2023'] }
 
-  private static schema: DenericSchema = {
-    full_name: ['profile.full_name', String],
-    age: ['profile.age', Number],
-    is_male: ['others.is_male', Boolean],
-    roles: ['others.roles', Deneric.Array(String)],
-    jobs: ['jobs', Deneric.Map(Deneric.Array(String))]
-  }
-
   constructor(data: any) {
-    super(Student.schema)
+    super({
+      full_name: ['profile.full_name', String],
+      age: ['profile.age', Number],
+      is_male: ['others.is_male', Boolean],
+      roles: ['others.roles', Deneric.Array(String)],
+      jobs: ['jobs', Deneric.Map(Deneric.Array(String))]
+    })
     this.fromJson(data)
   }
 }
@@ -31,16 +28,14 @@ class StudentIgnoreJob extends Deneric {
   roles: (string | number)[] = ['100']
   jobs: { [key: string]: string[] } = { 2023: ['2023'] }
 
-  private static schema: DenericSchema = {
-    full_name: ['profile.full_name', String],
-    age: ['profile.age', Number],
-    is_male: ['others.is_male', Boolean],
-    roles: ['others.roles', Deneric.Array(String)],
-    jobs: ['jobs', Object, true],
-  }
-
   constructor(data: any) {
-    super(StudentIgnoreJob.schema)
+    super({
+      full_name: ['profile.full_name', String],
+      age: ['profile.age', Number],
+      is_male: ['others.is_male', Boolean],
+      roles: ['others.roles', Deneric.Array(String)],
+      jobs: ['jobs', Object, true],
+    })
     this.fromJson(data)
   }
 }
@@ -51,17 +46,20 @@ class ClassRoom extends Deneric {
   students: Student[] = []
   mapStudents: Record<string, Student> = {}
 
-  private static schema: DenericSchema = {
-    monitor: ['class_monitor', Student],
-    students: ['my_student', Deneric.Array(Student)],
-    mapStudents: ['map_student', Deneric.Map(Student)]
-  }
-
   constructor() {
-    super(ClassRoom.schema)
+    super({
+      monitor: ['class_monitor', Student],
+      students: ['my_student', Deneric.Array(Student)],
+      mapStudents: ['map_student', Deneric.Map(Student)]
+    })
   }
 }
 
+class InvalidStudent extends Deneric {
+  constructor() {
+    super(null as unknown as DenericSchema);
+  }
+}
 
 const json1 = {
   profile: {
@@ -94,11 +92,11 @@ const json3 = {
 }
 
 const json4 = {
-  my_student : [json1, json2, json3],
+  my_student: [json1, json2, json3],
   class_monitor: json1,
   map_student: {
-    json1, 
-    json2, 
+    json1,
+    json2,
     json3
   }
 }
@@ -107,7 +105,8 @@ describe('fromJson', () => {
   it('checking schema instance', () => {
     const r1 = new Student(json1)
     const r2 = new Student(json1)
-    expect(r1.__schema__).to.be.eq(r2.__schema__)
+    // @ts-ignore
+    expect(r1.__proto__.__schema__).to.be.eq(r2.__proto__.__schema__)
   })
   it('checking parse data from schema', () => {
     const r = new Student(json1)
@@ -215,6 +214,7 @@ describe('toJson test', () => {
     const r = new ClassRoom()
     r.fromJson<ClassRoom>(json4)
     const json = r.toJson() as typeof json4
+
     expect(json.my_student.length).to.be.eq(json4.my_student.length)
 
     expect((json.my_student[0] as typeof json1).profile.full_name).to.be.eq(json1.profile.full_name)
@@ -277,5 +277,13 @@ describe('jsonIgnore test', () => {
     expect(json.others.is_male).to.be.eq(json1.others.is_male)
     expect(json.others.roles).to.be.deep.equal(json1.others.roles)
     expect(json.jobs).to.be.deep.equal(undefined)
+  })
+})
+
+describe('Throw Error when Invalid Schema', () => {
+  it('default', () => {
+    expect(() => {
+      new InvalidStudent()
+    }).to.be.throw(TypeError, 'Invalid schema: InvalidStudent')
   })
 })

@@ -97,7 +97,7 @@ const json = {
 
 Define Your Class & schema
 ```ts
-import Deneric, { DenericSchema } from 'deneric2'
+import Deneric from 'deneric2'
 
 class Student extends Deneric {
   fullName: string = 'noname' // default value of this property
@@ -106,16 +106,14 @@ class Student extends Deneric {
   roles: string[] = ['ABC', 'DEF']
   jobs: { [key: string]: string[] } = { 2021: ['Covid'] }
 
-  private static schema: DenericSchema = {
-    fullName: ['profile.full_name', String],
-    age: ['profile.age', Number],
-    isMale: ['others.is_male', Boolean],
-    roles: ['others.roles', Deneric.Array(String)],
-    jobs: ['jobs', Object],
-  }
-
   constructor() {
-    super(Student.schema)
+    super({
+      fullName: ['profile.full_name', String],
+      age: ['profile.age', Number],
+      isMale: ['others.is_male', Boolean],
+      roles: ['others.roles', Deneric.Array(String)],
+      jobs: ['jobs', Object],
+    })
   }
 }
 
@@ -165,14 +163,12 @@ class ClassRoom extends Deneric {
     students!: Student[]
     mapStudents!: Record<string, Student>
 
-    private static _schema: DenericSchema = {
-        monitor: ['class_monitor', Student], // property as an Deneric Entity
-        students: ['my_student', Deneric.Array(Student)], // property as an Array of Deneric Entity
-        mapStudents: ['map_student', Deneric.Map(Student)] // property as an Map with value is Deneric Entity
-    }
-
     constructor() {
-        super(ClassRoom._schema)
+      super({
+          monitor: ['class_monitor', Student], // property as an Deneric Entity
+          students: ['my_student', Deneric.Array(Student)], // property as an Array of Deneric Entity
+          mapStudents: ['map_student', Deneric.Map(Student)] // property as an Map with value is Deneric Entity
+      })
     }
 }
 ```
@@ -181,19 +177,17 @@ class ClassRoom extends Deneric {
 You can define schema to ignore property when call method toJson
 
 ```ts
-import Deneric, { DenericSchema } from 'deneric2'
+import Deneric from 'deneric2'
 
 class StudentIgnoreJob extends Deneric {
   fullName: string = 'noname'
   jobs: { [key: string]: string[] } = {}
 
-  private static schema: DenericSchema = {
-    fullName: ['profile.full_name', String],
-    jobs: ['jobs', Deneric.Map(Deneric.Array(String)), true] // json ignore. This schema will be ignore when call toJson
-  }
-
   constructor() {
-    super(StudentIgnoreJob.schema)
+    super({
+      fullName: ['profile.full_name', String],
+      jobs: ['jobs', Deneric.Map(Deneric.Array(String)), true] // json ignore. This schema will be ignore when call toJson
+    })
   }
 }
 
