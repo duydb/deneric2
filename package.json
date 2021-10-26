@@ -20,7 +20,7 @@
     "test": "webpack build && mocha -r ts-node/register 'test/**/*.test.ts'",
     "build": "webpack build",
     "build2": "tsc src",
-    "prepublish": "npm run build && npm set registry https://registry.npmjs.org"
+    "prepublish": "npm run test && npm set registry https://registry.npmjs.org"
   },
   "author": "duydb <duydbvn@gmail.com>",
   "license": "ISC",
