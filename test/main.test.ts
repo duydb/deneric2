@@ -158,6 +158,21 @@ describe('fromJson', () => {
     expect(r.roles).to.be.deep.equal(['100'])
     expect(r.jobs).to.be.deep.equal({ 2023: ['2023'] })
   })
+  it('checking default value when call fromJson', () => {
+    const r = new Student(json1)
+    expect(r.full_name).to.be.eq(json1.profile.full_name)
+    expect(r.age).to.be.eq(json1.profile.age)
+    expect(r.is_male).to.be.eq(json1.others.is_male)
+    expect(r.roles).to.be.deep.equal(json1.others.roles)
+    expect(r.jobs).to.be.deep.equal(json1.jobs)
+
+    r.fromJson(json3)
+    expect(r.full_name).to.be.eq('noname')
+    expect(r.age).to.be.eq(-1)
+    expect(r.is_male).to.be.eq(false)
+    expect(r.roles).to.be.deep.equal(['100'])
+    expect(r.jobs).to.be.deep.equal({ 2023: ['2023'] })
+  })
   it('checking parse complex data type (Array, Map)', () => {
     const r = new ClassRoom()
     const r2 = r.fromJson<ClassRoom>(json4)

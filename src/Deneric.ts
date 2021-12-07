@@ -7,7 +7,7 @@ type CommonType = StringConstructor | NumberConstructor | BooleanConstructor | A
 type SingleType = CommonType | Deneric | typeof Deneric
 type TDataType = SingleType | ComplexDataType
 type Newable = { new(value?: any): Deneric }
-export type DenericSchema = { [key: string]: [dataPath: string, dataType: TDataType, jsonIgnore?: boolean] }
+export type DenericSchema = { [key: string]: [dataPath: string, dataType: TDataType, jsonIgnore?: boolean, defaultValue?: any] }
 const COMMON_DATA_TYPES = [String, Number, Boolean, Array, Object]
 
 abstract class ComplexDataType {
@@ -151,7 +151,13 @@ abstract class Deneric {
     if (this.__proto__.schema) {
       Object.keys(this.__proto__.schema).forEach(key => {
         const [dataPath, dataType] = this.__proto__.schema[key]
-        const defaultValue = get(this, key) ?? Utils.getDefaultValue(dataType)
+        let defaultValue = get(this, key) ?? Utils.getDefaultValue(dataType)
+
+        if (this.__proto__.schema[key][3] === undefined) {
+          this.__proto__.schema[key][3] = defaultValue
+        } else {
+          defaultValue = this.__proto__.schema[key][3] ?? Utils.getDefaultValue(dataType)
+        }
         const value = Utils.getValueFromJson(cloneDeep(get(data, dataPath)), dataType, defaultValue, strict)
         set(this, key, value)
       })

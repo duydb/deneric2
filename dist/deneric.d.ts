@@ -2,7 +2,7 @@ declare type CommonType = StringConstructor | NumberConstructor | BooleanConstru
 declare type SingleType = CommonType | Deneric | typeof Deneric;
 declare type TDataType = SingleType | ComplexDataType;
 export declare type DenericSchema = {
-    [key: string]: [dataPath: string, dataType: TDataType, jsonIgnore?: boolean];
+    [key: string]: [dataPath: string, dataType: TDataType, jsonIgnore?: boolean, defaultValue?: any];
 };
 declare abstract class ComplexDataType {
     abstract itemType: SingleType | ComplexDataType;
