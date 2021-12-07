@@ -3,10 +3,12 @@ import set from 'lodash/set'
 import cloneDeep from 'lodash/cloneDeep'
 import isObject from 'lodash/isObject'
 
-type SingleType = StringConstructor | NumberConstructor | BooleanConstructor | ArrayConstructor | ObjectConstructor | Deneric | typeof Deneric
+type CommonType = StringConstructor | NumberConstructor | BooleanConstructor | ArrayConstructor | ObjectConstructor
+type SingleType = CommonType | Deneric | typeof Deneric
 type TDataType = SingleType | ComplexDataType
 type Newable = { new(value?: any): Deneric }
 export type DenericSchema = { [key: string]: [dataPath: string, dataType: TDataType, jsonIgnore?: boolean] }
+const COMMON_DATA_TYPES = [String, Number, Boolean, Array, Object]
 
 abstract class ComplexDataType {
   abstract itemType: SingleType | ComplexDataType
@@ -30,40 +32,53 @@ class MapDataType extends ComplexDataType {
 }
 
 const Utils = Object.freeze({
-  getValueFromJson(data: any, dataType: TDataType, defaultValue: any): any {
-    switch (dataType) {
-      case String:
-        return typeof data === 'string' ? data : defaultValue
-      case Number:
-        return typeof data === 'number' ? data : defaultValue
-      case Boolean:
-        return typeof data === 'boolean' ? data : defaultValue
-      case Array:
-        return Array.isArray(data) ? data : defaultValue
-      case Object:
-        return isObject(data) ? data : defaultValue
-    }
-    if (dataType instanceof ComplexDataType) {
-      const complexDataType = dataType as ComplexDataType
-      if (complexDataType.isArray) {
-        return Array.isArray(data) ? data.map(item => Utils.getValueFromJson(item, complexDataType.itemType, Utils.getDefaultValue(complexDataType.itemType))) : defaultValue
-      }
-      if (complexDataType.isMap) {
-        if (isObject(data)) {
-          return Object.keys(data).reduce((prev, key) => {
-            set(prev, key, Utils.getValueFromJson(get(data, key), complexDataType.itemType, Utils.getDefaultValue(complexDataType.itemType)))
-            return prev
-          }, {})
-        }
-        return defaultValue
-      }
-    }
-
+  getValueFromJson(data: any, dataType: TDataType, defaultValue: any, strict: boolean): any {
+    // Handle dataType is Deneric Instance
     if ((dataType as typeof Deneric).prototype instanceof Deneric) {
       return new (dataType as unknown as Newable)(data)
     }
 
-    return data
+    // Handle dataType is ComplexDataType
+    if (dataType instanceof ComplexDataType) {
+      const complexDataType = dataType as ComplexDataType
+      if (complexDataType.isArray) {
+        return Array.isArray(data) ? data.map(item => Utils.getValueFromJson(item, complexDataType.itemType, Utils.getDefaultValue(complexDataType.itemType), strict)) : defaultValue
+      }
+      if (complexDataType.isMap && isObject(data)) {
+        return Object.keys(data).reduce((prev, key) => {
+          set(prev, key, Utils.getValueFromJson(get(data, key), complexDataType.itemType, Utils.getDefaultValue(complexDataType.itemType), strict))
+          return prev
+        }, {})
+      }
+      return defaultValue
+    }
+
+    const dataIsNil = data === null || data === undefined
+    // Handle dataType is not common types
+    if (!COMMON_DATA_TYPES.includes(dataType as CommonType)) {
+      return dataIsNil ? defaultValue : data
+    }
+
+    // Handle dataType is common types with strict rule
+    if (strict) {
+      switch (dataType) {
+        case String:
+          return typeof data === 'string' ? data : defaultValue
+        case Number:
+          return typeof data === 'number' ? data : defaultValue
+        case Boolean:
+          return typeof data === 'boolean' ? data : defaultValue
+        case Array:
+          return Array.isArray(data) ? data : defaultValue
+        case Object:
+          return isObject(data) ? data : defaultValue
+      }
+    }
+    // Handle dataType is common types with no-strict rule
+    if (!dataIsNil) {
+      return (dataType as Function)(data)
+    }
+    return defaultValue
   },
   getValueFromDeneric(data: any, dataType: TDataType, defaultValue: any): any {
     switch (dataType) {
@@ -132,12 +147,12 @@ abstract class Deneric {
     return cloneDeep(this) as unknown as T
   }
 
-  fromJson<T extends Deneric>(data: any): T {
+  fromJson<T extends Deneric>(data: any, strict: boolean = true): T {
     if (this.__proto__.schema) {
       Object.keys(this.__proto__.schema).forEach(key => {
         const [dataPath, dataType] = this.__proto__.schema[key]
         const defaultValue = get(this, key) ?? Utils.getDefaultValue(dataType)
-        const value = Utils.getValueFromJson(cloneDeep(get(data, dataPath)), dataType, defaultValue)
+        const value = Utils.getValueFromJson(cloneDeep(get(data, dataPath)), dataType, defaultValue, strict)
         set(this, key, value)
       })
     }
