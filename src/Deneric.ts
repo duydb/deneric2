@@ -150,14 +150,15 @@ abstract class Deneric {
   fromJson<T extends Deneric>(data: any, strict: boolean = true): T {
     if (this.__proto__.schema) {
       Object.keys(this.__proto__.schema).forEach(key => {
-        const [dataPath, dataType] = this.__proto__.schema[key]
-        let defaultValue = get(this, key) ?? Utils.getDefaultValue(dataType)
-
-        if (this.__proto__.schema[key][3] === undefined) {
-          this.__proto__.schema[key][3] = defaultValue
-        } else {
-          defaultValue = this.__proto__.schema[key][3] ?? Utils.getDefaultValue(dataType)
+        const schemaItem = this.__proto__.schema[key]
+        const [dataPath, dataType] = schemaItem
+        
+        if (schemaItem[3] === undefined) {
+          schemaItem[3] = get(this, key) ?? Utils.getDefaultValue(dataType)
         }
+        
+        let defaultValue = schemaItem[3]
+
         const value = Utils.getValueFromJson(cloneDeep(get(data, dataPath)), dataType, defaultValue, strict)
         set(this, key, value)
       })
