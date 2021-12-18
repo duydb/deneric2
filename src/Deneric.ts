@@ -8,7 +8,7 @@ type SingleType = CommonType | Deneric | typeof Deneric
 type TDataType = SingleType | ComplexDataType
 type Newable = { new(value?: any): Deneric }
 export type DenericSchema = { [key: string]: [dataPath: string, dataType: TDataType, jsonIgnore?: boolean, defaultValue?: any] }
-const COMMON_DATA_TYPES = [String, Number, Boolean, Array, Object]
+const COMMON_DATA_TYPES: CommonType[] = [String, Number, Boolean, Array, Object]
 
 abstract class ComplexDataType {
   abstract itemType: SingleType | ComplexDataType
@@ -74,10 +74,23 @@ const Utils = Object.freeze({
           return isObject(data) ? data : defaultValue
       }
     }
-    // Handle dataType is common types with no-strict rule
-    if (!dataIsNil) {
-      return (dataType as Function)(data)
+
+    // Handle dataType is common types with no-strict rule and data is not Nil
+    if (!strict && !dataIsNil) {
+      switch (dataType) {
+        case String:
+          return String(data)
+        case Number:
+          return Number(data)
+        case Boolean:
+          return Boolean(data)
+        case Array:
+          return [].concat(data)
+        case Object:
+          return Object(data)
+      }
     }
+  
     return defaultValue
   },
   getValueFromDeneric(data: any, dataType: TDataType, defaultValue: any): any {
