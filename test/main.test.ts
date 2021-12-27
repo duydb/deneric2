@@ -251,7 +251,7 @@ describe('toJson test', () => {
     expect(json.others.roles).to.be.deep.equal(['100'])
     expect(json.jobs).to.be.deep.equal({ 2023: ['2023'] })
   })
-  it.only('toJson with valid default value', () => {
+  it('toJson with valid default value', () => {
     const n = new NoStrictClass()
     n.fromJson(noStrictJson, false)
 
