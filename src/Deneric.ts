@@ -183,9 +183,9 @@ abstract class Deneric {
     if (this.__proto__.schema) {
       Object.keys(this.__proto__.schema).forEach(key => {
         if (this.__proto__.schema) {
-          const [dataPath, dataType, jsonIgnore] = this.__proto__.schema[key]
+          const [dataPath, dataType, jsonIgnore, defaultValueFromSchema] = this.__proto__.schema[key]
           if (!jsonIgnore) {
-            set(json, dataPath, Utils.getValueFromDeneric(cloneDeep(get(this, key)), dataType, key))
+            set(json, dataPath, Utils.getValueFromDeneric(cloneDeep(get(this, key)), dataType, defaultValueFromSchema || Utils.getDefaultValue(dataType)))
           }
         }
       })

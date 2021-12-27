@@ -62,11 +62,11 @@ class InvalidStudent extends Deneric {
 }
 
 class NoStrictClass extends Deneric {
-  number!: Number
-  string!: Number
-  boolean!: Boolean
-  object!: Object
-  array!: Array<String>
+  number!: number
+  string!: string
+  boolean!: boolean
+  object!: object
+  array!: string[]
 
   constructor() {
     super({
@@ -119,7 +119,7 @@ const json4 = {
   }
 }
 
-const noStrictJson = { 
+const noStrictJson = {
   number: '123',
   string: 21,
   boolean: 'Not a Boolean',
@@ -251,6 +251,41 @@ describe('toJson test', () => {
     expect(json.others.roles).to.be.deep.equal(['100'])
     expect(json.jobs).to.be.deep.equal({ 2023: ['2023'] })
   })
+  it.only('toJson with valid default value', () => {
+    const n = new NoStrictClass()
+    n.fromJson(noStrictJson, false)
+
+    expect(typeof n.number === 'number')
+    expect(typeof n.string === 'string')
+    expect(typeof n.boolean === 'boolean')
+    expect(Array.isArray(n.array))
+    expect(typeof n.object === 'object')
+
+    let r: { number?: number, string?: string, boolean?: boolean, array?: string[], object?: object } = n.toJson()
+    expect(typeof r.number === 'number')
+    expect(typeof r.string === 'string')
+    expect(typeof r.boolean === 'boolean')
+    expect(Array.isArray(r.array))
+    expect(typeof r.object === 'object')
+    
+    // @ts-ignore
+    n.number = undefined
+    // @ts-ignore
+    n.string = undefined
+    // @ts-ignore
+    n.boolean = undefined
+    // @ts-ignore
+    n.array = undefined
+    // @ts-ignore
+    n.object = undefined
+
+    r = n.toJson()
+    expect(typeof r.number === 'number')
+    expect(typeof r.string === 'string')
+    expect(typeof r.boolean === 'boolean')
+    expect(Array.isArray(r.array))
+    expect(typeof r.object === 'object')
+  })
   it('toJson complex data type (Array, Map)', () => {
     const r = new ClassRoom()
     r.fromJson<ClassRoom>(json4)
@@ -346,7 +381,7 @@ describe('Common dataType and strict mode', () => {
     expect(n.array).be.deep.eq(Array(noStrictJson.array))
     expect(n.object).be.deep.eq(Object(noStrictJson.object))
   })
-  
+
   it('must be parse to default value with strict rule', () => {
     const n = new NoStrictClass()
     n.fromJson(noStrictJson)
@@ -356,7 +391,7 @@ describe('Common dataType and strict mode', () => {
     expect(typeof n.boolean === 'boolean')
     expect(Array.isArray(n.array))
     expect(typeof n.object === 'object')
-    
+
     expect(n.number).be.eq(0)
     expect(n.string).be.eq('')
     expect(n.boolean).be.eq(false)
