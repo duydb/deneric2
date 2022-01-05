@@ -8,6 +8,7 @@ class Student extends Deneric {
   is_male: boolean = false
   roles: (string | number)[] = ['100']
   jobs: { [key: string]: string[] } = { 2023: ['2023'] }
+  highscores!: number[]
 
   constructor(data: any) {
     super({
@@ -15,7 +16,8 @@ class Student extends Deneric {
       age: ['profile.age', Number],
       is_male: ['others.is_male', Boolean],
       roles: ['others.roles', Deneric.Array(String)],
-      jobs: ['jobs', Deneric.Map(Deneric.Array(String))]
+      jobs: ['jobs', Deneric.Map(Deneric.Array(String))],
+      highscores: ['highscores', Deneric.Array(Number)]
     })
     this.fromJson(data)
   }
@@ -91,7 +93,8 @@ const json1 = {
   jobs: {
     2021: ['A', 'B', 'C'],
     2025: ['B', 'D']
-  }
+  },
+  highscores: [10, 9.5, 8.75]
 }
 
 const json2 = null
@@ -141,14 +144,21 @@ describe('fromJson', () => {
     expect(r.is_male).to.be.eq(json1.others.is_male)
     expect(r.roles).to.be.deep.equal(json1.others.roles)
     expect(r.jobs).to.be.deep.equal(json1.jobs)
+    expect(r.highscores).to.be.deep.equal(json1.highscores)
   })
   it('checking parse default value (missing schema)', () => {
-    const r = new Student(json2)
+    const r = new Student(null)
     expect(r.full_name).to.be.eq('noname')
     expect(r.age).to.be.eq(-1)
     expect(r.is_male).to.be.eq(false)
     expect(r.roles).to.be.deep.equal(['100'])
     expect(r.jobs).to.be.deep.equal({ 2023: ['2023'] })
+    expect(r.highscores).to.be.deep.equal([])
+    
+    r.highscores = [1]
+    
+    const r2 = r.clone<Student>()
+    expect(r2.highscores).to.be.deep.equal(r.highscores)
   })
   it('checking parse default value (wrong data type)', () => {
     const r = new Student(json3)
@@ -157,6 +167,7 @@ describe('fromJson', () => {
     expect(r.is_male).to.be.eq(false)
     expect(r.roles).to.be.deep.equal(['100'])
     expect(r.jobs).to.be.deep.equal({ 2023: ['2023'] })
+    expect(r.highscores).to.be.deep.equal([])
   })
   it('checking default value when call fromJson', () => {
     const r = new Student(json1)

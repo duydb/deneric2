@@ -127,6 +127,16 @@ const Utils = Object.freeze({
     return data
   },
   getDefaultValue(dataType: TDataType) {
+    if (dataType instanceof ComplexDataType) {
+      const complexDataType = dataType as ComplexDataType
+      if (complexDataType.isArray) {
+        return []
+      }
+      if (complexDataType.isMap) {
+        return {}
+      }
+    }
+
     switch (dataType) {
       case String:
         return ''
