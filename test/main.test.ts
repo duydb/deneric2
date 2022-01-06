@@ -81,6 +81,17 @@ class NoStrictClass extends Deneric {
   }
 }
 
+class ArrayNumber extends Deneric {
+  numbers!: number[]
+
+  constructor(data?: object) {
+    super({
+      numbers: ['', Deneric.Array(Number)]
+    })
+    this.fromJson(data)
+  }
+}
+
 const json1 = {
   profile: {
     full_name: 'John Smith',
@@ -154,9 +165,9 @@ describe('fromJson', () => {
     expect(r.roles).to.be.deep.equal(['100'])
     expect(r.jobs).to.be.deep.equal({ 2023: ['2023'] })
     expect(r.highscores).to.be.deep.equal([])
-    
+
     r.highscores = [1]
-    
+
     const r2 = r.clone<Student>()
     expect(r2.highscores).to.be.deep.equal(r.highscores)
   })
@@ -278,7 +289,7 @@ describe('toJson test', () => {
     expect(typeof r.boolean === 'boolean')
     expect(Array.isArray(r.array))
     expect(typeof r.object === 'object')
-    
+
     // @ts-ignore
     n.number = undefined
     // @ts-ignore
@@ -408,5 +419,16 @@ describe('Common dataType and strict mode', () => {
     expect(n.boolean).be.eq(false)
     expect(n.array).be.deep.eq([])
     expect(n.object).be.deep.eq({})
+  })
+})
+
+describe('Empty DataPath', () => {
+  it('ArrayNumber', () => {
+    const r = new ArrayNumber();
+    expect(r.numbers).to.be.deep.equal([])
+    
+    const json = [1,2,3]
+    r.fromJson(json)
+    expect(r.numbers).to.be.deep.equal(json)
   })
 })

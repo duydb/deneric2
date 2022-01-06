@@ -32,6 +32,12 @@ class MapDataType extends ComplexDataType {
 }
 
 const Utils = Object.freeze({
+  getValue(data: any, dataPath: string) {
+    if (!!dataPath) {
+      return get(data, dataPath)
+    }
+    return data
+  },
   getValueFromJson(data: any, dataType: TDataType, defaultValue: any, strict: boolean): any {
     // Handle dataType is Deneric Instance
     if ((dataType as typeof Deneric).prototype instanceof Deneric) {
@@ -46,7 +52,7 @@ const Utils = Object.freeze({
       }
       if (complexDataType.isMap && isObject(data)) {
         return Object.keys(data).reduce((prev, key) => {
-          set(prev, key, Utils.getValueFromJson(get(data, key), complexDataType.itemType, Utils.getDefaultValue(complexDataType.itemType), strict))
+          set(prev, key, Utils.getValueFromJson(Utils.getValue(data, key), complexDataType.itemType, Utils.getDefaultValue(complexDataType.itemType), strict))
           return prev
         }, {})
       }
@@ -181,7 +187,7 @@ abstract class Deneric {
         } else {
           defaultValue = this.__proto__.schema[key][3] ?? Utils.getDefaultValue(dataType)
         }
-        const value = Utils.getValueFromJson(cloneDeep(get(data, dataPath)), dataType, defaultValue, strict)
+        const value = Utils.getValueFromJson(cloneDeep(Utils.getValue(data, dataPath)), dataType, defaultValue, strict)
         set(this, key, value)
       })
     }
