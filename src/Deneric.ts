@@ -9,6 +9,7 @@ type TDataType = SingleType | ComplexDataType
 type Newable = { new(value?: any): Deneric }
 export type DenericSchema = { [key: string]: [dataPath: string, dataType: TDataType, jsonIgnore?: boolean, defaultValue?: any] }
 const COMMON_DATA_TYPES: CommonType[] = [String, Number, Boolean, Array, Object]
+const DENERIC_SCHEMA_PATH: string = '__deneric_schema'
 
 abstract class ComplexDataType {
   abstract itemType: SingleType | ComplexDataType
@@ -19,6 +20,7 @@ abstract class ComplexDataType {
 
 class ArrayDataType extends ComplexDataType {
   isArray = true
+
   constructor(public itemType: SingleType | ComplexDataType) {
     super()
   }
@@ -26,6 +28,7 @@ class ArrayDataType extends ComplexDataType {
 
 class MapDataType extends ComplexDataType {
   isMap = true
+
   constructor(public itemType: SingleType | ComplexDataType) {
     super()
   }
@@ -96,7 +99,7 @@ const Utils = Object.freeze({
           return Object(data)
       }
     }
-  
+
     return defaultValue
   },
   getValueFromDeneric(data: any, dataType: TDataType, defaultValue: any): any {
@@ -110,7 +113,7 @@ const Utils = Object.freeze({
       case Array:
         return Array.isArray(data) ? data : defaultValue
       case Object:
-        return isObject(data) ? data : defaultValue
+        return isObject(data) ? cloneDeep(data) : defaultValue
     }
     if (dataType instanceof ComplexDataType) {
       const complexDataType = dataType as ComplexDataType
@@ -156,20 +159,30 @@ const Utils = Object.freeze({
         return {}
     }
     return undefined
+  },
+  setSchema(instance: Deneric, schema: DenericSchema): void {
+    Object.defineProperty(instance,DENERIC_SCHEMA_PATH,{
+      enumerable: false,
+      value: schema
+    })
+  },
+  getSchema(instance: Deneric): DenericSchema {
+    return get(instance, DENERIC_SCHEMA_PATH) || {} as DenericSchema
   }
 })
 
 abstract class Deneric {
   static Array = (dataType: TDataType) => new ArrayDataType(dataType)
   static Map = (valueDataType: TDataType) => new MapDataType(valueDataType)
+  static Utils = Utils
 
-  private __proto__!: { schema: DenericSchema }
+  // private __proto__!: { schema: DenericSchema }
 
   constructor(schema: DenericSchema) {
     if (!schema) {
       throw new TypeError('Invalid schema: ' + this.constructor.name)
     }
-    this.__proto__.schema = schema
+    Utils.setSchema(this, schema)
   }
 
   clone<T extends Deneric>(): T {
@@ -177,35 +190,31 @@ abstract class Deneric {
   }
 
   fromJson<T extends Deneric>(data: any, strict: boolean = true): T {
-    if (this.__proto__.schema) {
-      Object.keys(this.__proto__.schema).forEach(key => {
-        const [dataPath, dataType] = this.__proto__.schema[key]
-        let defaultValue = get(this, key) ?? Utils.getDefaultValue(dataType)
+    const schema: DenericSchema = Utils.getSchema(this)
+    Object.keys(schema).forEach(key => {
+      const [dataPath, dataType] = schema[key]
+      let defaultValue = get(this, key) ?? Utils.getDefaultValue(dataType)
 
-        if (this.__proto__.schema[key][3] === undefined) {
-          this.__proto__.schema[key][3] = defaultValue
-        } else {
-          defaultValue = this.__proto__.schema[key][3] ?? Utils.getDefaultValue(dataType)
-        }
-        const value = Utils.getValueFromJson(cloneDeep(Utils.getValue(data, dataPath)), dataType, defaultValue, strict)
-        set(this, key, value)
-      })
-    }
+      if (schema[key][3] === undefined) {
+        schema[key][3] = defaultValue
+      } else {
+        defaultValue = schema[key][3] ?? Utils.getDefaultValue(dataType)
+      }
+      const value = Utils.getValueFromJson(cloneDeep(Utils.getValue(data, dataPath)), dataType, defaultValue, strict)
+      set(this, key, value)
+    })
     return this as unknown as T
   }
 
   toJson(): object {
+    const schema: DenericSchema = Utils.getSchema(this)
     const json = {}
-    if (this.__proto__.schema) {
-      Object.keys(this.__proto__.schema).forEach(key => {
-        if (this.__proto__.schema) {
-          const [dataPath, dataType, jsonIgnore, defaultValueFromSchema] = this.__proto__.schema[key]
-          if (!jsonIgnore) {
-            set(json, dataPath, Utils.getValueFromDeneric(cloneDeep(get(this, key)), dataType, defaultValueFromSchema || Utils.getDefaultValue(dataType)))
-          }
-        }
-      })
-    }
+    Object.keys(schema).forEach(key => {
+      const [dataPath, dataType, jsonIgnore, defaultValueFromSchema] = schema[key]
+      if (!jsonIgnore) {
+        set(json, dataPath, Utils.getValueFromDeneric(get(this, key), dataType, defaultValueFromSchema || Utils.getDefaultValue(dataType)))
+      }
+    })
     return json
   }
 }

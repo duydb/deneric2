@@ -22,7 +22,14 @@ declare class MapDataType extends ComplexDataType {
 declare abstract class Deneric {
     static Array: (dataType: TDataType) => ArrayDataType;
     static Map: (valueDataType: TDataType) => MapDataType;
-    private __proto__;
+    static Utils: Readonly<{
+        getValue(data: any, dataPath: string): any;
+        getValueFromJson(data: any, dataType: TDataType, defaultValue: any, strict: boolean): any;
+        getValueFromDeneric(data: any, dataType: TDataType, defaultValue: any): any;
+        getDefaultValue(dataType: TDataType): {} | undefined;
+        setSchema(instance: Deneric, schema: DenericSchema): void;
+        getSchema(instance: Deneric): DenericSchema;
+    }>;
     constructor(schema: DenericSchema);
     clone<T extends Deneric>(): T;
     fromJson<T extends Deneric>(data: any, strict?: boolean): T;

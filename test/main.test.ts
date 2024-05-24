@@ -2,6 +2,15 @@ import { it, describe } from 'mocha'
 import { expect } from 'chai'
 import Deneric, { DenericSchema } from '../dist/deneric'
 
+const STUDENT_SCHEMA: DenericSchema = {
+  full_name: ['profile.full_name', String],
+  age: ['profile.age', Number],
+  is_male: ['others.is_male', Boolean],
+  roles: ['others.roles', Deneric.Array(String)],
+  jobs: ['jobs', Deneric.Map(Deneric.Array(String))],
+  highscores: ['highscores', Deneric.Array(Number)]
+}
+
 class Student extends Deneric {
   full_name: string = 'noname'
   age: number = -1
@@ -11,14 +20,7 @@ class Student extends Deneric {
   highscores!: number[]
 
   constructor(data: any) {
-    super({
-      full_name: ['profile.full_name', String],
-      age: ['profile.age', Number],
-      is_male: ['others.is_male', Boolean],
-      roles: ['others.roles', Deneric.Array(String)],
-      jobs: ['jobs', Deneric.Map(Deneric.Array(String))],
-      highscores: ['highscores', Deneric.Array(Number)]
-    })
+    super(STUDENT_SCHEMA)
     this.fromJson(data)
   }
 }
@@ -145,8 +147,8 @@ describe('fromJson', () => {
   it('checking schema instance', () => {
     const r1 = new Student(json1)
     const r2 = new Student(json1)
-    // @ts-ignore
-    expect(r1.__proto__.__schema__).to.be.eq(r2.__proto__.__schema__)
+    expect(Deneric.Utils.getSchema(r1)).to.be.equals(Deneric.Utils.getSchema(r2))
+    expect(Deneric.Utils.getSchema(r1)).to.be.equals(STUDENT_SCHEMA)
   })
   it('checking parse data from schema', () => {
     const r = new Student(json1)
@@ -314,7 +316,6 @@ describe('toJson test', () => {
     const json = r.toJson() as typeof json4
 
     expect(json.my_student.length).to.be.eq(json4.my_student.length)
-
     expect((json.my_student[0] as typeof json1).profile.full_name).to.be.eq(json1.profile.full_name)
     expect((json.my_student[0] as typeof json1).profile.age).to.be.eq(json1.profile.age)
     expect((json.my_student[0] as typeof json1).others.is_male).to.be.eq(json1.others.is_male)
@@ -426,9 +427,13 @@ describe('Empty DataPath', () => {
   it('ArrayNumber', () => {
     const r = new ArrayNumber();
     expect(r.numbers).to.be.deep.equal([])
-    
+
     const json = [1,2,3]
     r.fromJson(json)
     expect(r.numbers).to.be.deep.equal(json)
+
+    const json2 = [3,5,7]
+    const r2 = new ArrayNumber(json2);
+    expect(r2.numbers).to.be.deep.equal(json2)
   })
 })
