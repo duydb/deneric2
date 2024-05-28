@@ -161,10 +161,13 @@ const Utils = Object.freeze({
     return undefined
   },
   setSchema(instance: Deneric, schema: DenericSchema): void {
-    Object.defineProperty(instance,DENERIC_SCHEMA_PATH,{
-      enumerable: false,
-      value: schema
-    })
+    if (!Object.getOwnPropertyNames(instance).includes(DENERIC_SCHEMA_PATH)) {
+      Object.defineProperty(instance, DENERIC_SCHEMA_PATH,{
+        enumerable: false,
+        writable: true,
+      })
+    }
+    set(instance, DENERIC_SCHEMA_PATH, schema)
   },
   getSchema(instance: Deneric): DenericSchema {
     return get(instance, DENERIC_SCHEMA_PATH) || {} as DenericSchema
