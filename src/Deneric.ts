@@ -189,7 +189,9 @@ abstract class Deneric {
   }
 
   clone<T extends Deneric>(): T {
-    return cloneDeep(this) as unknown as T
+    const newInstance: T = cloneDeep(this) as unknown as T
+    Utils.setSchema(newInstance, Utils.getSchema(this))
+    return newInstance
   }
 
   fromJson<T extends Deneric>(data: any, strict: boolean = true): T {
