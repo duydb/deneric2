@@ -161,12 +161,12 @@ const Utils = Object.freeze({
     return undefined
   },
   setSchema(instance: Deneric, schema: DenericSchema): void {
-    if (!Object.getOwnPropertyNames(instance).includes(DENERIC_SCHEMA_PATH)) {
-      Object.defineProperty(instance, DENERIC_SCHEMA_PATH,{
-        enumerable: false,
-        writable: true,
-      })
-    }
+    // if (!Object.getOwnPropertyNames(instance).includes(DENERIC_SCHEMA_PATH)) {
+    //   Object.defineProperty(instance, DENERIC_SCHEMA_PATH,{
+    //     enumerable: false,
+    //     writable: true,
+    //   })
+    // }
     set(instance, DENERIC_SCHEMA_PATH, schema)
   },
   getSchema(instance: Deneric): DenericSchema {
@@ -189,9 +189,7 @@ abstract class Deneric {
   }
 
   clone<T extends Deneric>(): T {
-    const newInstance: T = cloneDeep(this) as unknown as T
-    Utils.setSchema(newInstance, Utils.getSchema(this))
-    return newInstance
+    return cloneDeep(this) as unknown as T
   }
 
   fromJson<T extends Deneric>(data: any, strict: boolean = true): T {

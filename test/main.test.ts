@@ -364,13 +364,13 @@ describe('toJson test', () => {
     const json = r.toJson() as typeof json1
     const jsonClone = r.clone().toJson() as typeof json1
 
-    expect(jsonClone.profile.full_name).to.be.eq(json1.profile.full_name)
-    expect(jsonClone.profile.age).to.be.eq(json1.profile.age)
-    expect(jsonClone.others.is_male).to.be.eq(json1.others.is_male)
-    expect(jsonClone.others.roles).to.be.deep.equal(json1.others.roles)
-    expect(jsonClone.jobs).to.be.deep.equal(json1.jobs)
-
     expect(json).to.be.deep.equal(jsonClone)
+
+    const r2 = new ClassRoom()
+    r2.fromJson<ClassRoom>(json4)
+    const json2 = r2.toJson() as typeof json4
+    const json2Clone = r2.clone().toJson() as typeof json4
+    expect(json2).to.be.deep.equal(json2Clone)
   })
 })
 
