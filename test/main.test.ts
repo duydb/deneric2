@@ -1,6 +1,7 @@
 import { it, describe } from 'mocha'
 import { expect } from 'chai'
-import Deneric, { DenericSchema } from '../dist/deneric'
+// import Deneric, { DenericSchema } from '../dist/deneric'
+import Deneric, { DenericSchema } from '../src/Deneric'
 
 const STUDENT_SCHEMA: DenericSchema = {
   full_name: ['profile.full_name', String],
@@ -358,6 +359,19 @@ describe('toJson test', () => {
     expect((json.map_student['json3'] as unknown as typeof json1).others.roles).to.be.deep.equal(['100'])
     expect((json.map_student['json3'] as unknown as typeof json1).jobs).to.be.deep.equal({ 2023: ['2023'] })
   })
+  it('toJson must equal clone.toJson', () => {
+    const r = new Student(json1)
+    const json = r.toJson() as typeof json1
+    const jsonClone = r.clone().toJson() as typeof json1
+
+    expect(jsonClone.profile.full_name).to.be.eq(json1.profile.full_name)
+    expect(jsonClone.profile.age).to.be.eq(json1.profile.age)
+    expect(jsonClone.others.is_male).to.be.eq(json1.others.is_male)
+    expect(jsonClone.others.roles).to.be.deep.equal(json1.others.roles)
+    expect(jsonClone.jobs).to.be.deep.equal(json1.jobs)
+
+    expect(json).to.be.deep.equal(jsonClone)
+  })
 })
 
 describe('jsonIgnore test', () => {
@@ -435,5 +449,45 @@ describe('Empty DataPath', () => {
     const json2 = [3,5,7]
     const r2 = new ArrayNumber(json2);
     expect(r2.numbers).to.be.deep.equal(json2)
+  })
+})
+
+const compositeJson = {
+  name: 'parent',
+  children: [{
+    name: 'child_1'
+  },{
+    name: 'child_2'
+  },{
+    name: 'child_3',
+    children: [{
+      name: 'child_3_1',
+    },{
+      name: 'child_3_2'
+    }]
+  }]
+}
+
+class CompositeItem extends Deneric {
+  name: string = ''
+  children!: CompositeItem[]
+
+  constructor(json?: object) {
+    super({
+      name: ['name', String],
+      children: ['children', Deneric.Array(CompositeItem)]
+    })
+    this.fromJson(json)
+  }
+}
+
+describe('Composite', () => {
+  it('must be success when parse composite item', () => {
+    const r = new CompositeItem(compositeJson)
+
+    console.log('JSON', compositeJson)
+    console.log('ENTITY', r)
+    console.log('TO_JSON', r.toJson())
+    console.log('TO_JSON_stringify', JSON.stringify(r.toJson()))
   })
 })
