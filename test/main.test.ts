@@ -487,18 +487,20 @@ describe('Composite', () => {
 })
 
 describe('clone', () => {
-  it('toJson must equal clone.toJson', () => {
+  it('clone simple', () => {
     const r = new Student(json1)
     const json = r.toJson() as typeof json1
     const jsonClone = r.clone().toJson() as typeof json1
 
-    expect(json).to.be.deep.equal(jsonClone)
+    expect(r.toJson())
+      .to.be.deep.equal(r.clone().toJson())
+      .to.be.deep.equal(r.clone().clone().toJson())
 
     const r2 = new ClassRoom()
     r2.fromJson<ClassRoom>(json4)
-    const json2 = r2.toJson() as typeof json4
-    const json2Clone = r2.clone().toJson() as typeof json4
-    expect(json2).to.be.deep.equal(json2Clone)
+    expect(r2.toJson())
+      .to.be.deep.equal(r2.clone().toJson())
+      .to.be.deep.equal(r2.clone().clone().toJson())
   })
 
   it('clone composite', () => {
@@ -542,7 +544,10 @@ describe('clone', () => {
     }
     const r = new CompositeItem(compositeJson)
 
-    expect(r.clone().toJson()).to.be.deep.equal(compositeJson)
+    expect(r.toJson())
+      .to.be.deep.equal(compositeJson)
+      .to.be.deep.equal(r.clone().toJson())
+      .to.be.deep.equal(r.clone().clone().toJson())
   })
 
   it('clone complex', () => {
@@ -621,6 +626,8 @@ describe('clone', () => {
     const r = new MyClassRoom(j)
 
     expect(r.toJson()).to.be.deep.equal(j)
-    expect(r.clone().toJson()).to.be.deep.equal(j)
+    expect(r.clone().toJson())
+      .to.be.deep.equal(j)
+      .to.be.deep.equal(r.clone().toJson())
   })
 })
