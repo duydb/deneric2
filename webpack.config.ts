@@ -3,7 +3,7 @@ const path = require('path');
 module.exports = {
   mode: 'production',
   entry: {
-    deneric: './src/deneric.ts'
+    deneric: './src/Deneric.ts'
   },
   module: {
     rules: [

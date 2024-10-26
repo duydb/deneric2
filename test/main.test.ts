@@ -1,5 +1,5 @@
-import { it, describe } from 'mocha'
 import { expect } from 'chai'
+import { describe, it } from 'mocha'
 // import Deneric, { DenericSchema } from '../dist/deneric'
 import Deneric, { DenericSchema } from '../src/Deneric'
 
@@ -359,19 +359,6 @@ describe('toJson test', () => {
     expect((json.map_student['json3'] as unknown as typeof json1).others.roles).to.be.deep.equal(['100'])
     expect((json.map_student['json3'] as unknown as typeof json1).jobs).to.be.deep.equal({ 2023: ['2023'] })
   })
-  it('toJson must equal clone.toJson', () => {
-    const r = new Student(json1)
-    const json = r.toJson() as typeof json1
-    const jsonClone = r.clone().toJson() as typeof json1
-
-    expect(json).to.be.deep.equal(jsonClone)
-
-    const r2 = new ClassRoom()
-    r2.fromJson<ClassRoom>(json4)
-    const json2 = r2.toJson() as typeof json4
-    const json2Clone = r2.clone().toJson() as typeof json4
-    expect(json2).to.be.deep.equal(json2Clone)
-  })
 })
 
 describe('jsonIgnore test', () => {
@@ -442,52 +429,198 @@ describe('Empty DataPath', () => {
     const r = new ArrayNumber();
     expect(r.numbers).to.be.deep.equal([])
 
-    const json = [1,2,3]
+    const json = [1, 2, 3]
     r.fromJson(json)
     expect(r.numbers).to.be.deep.equal(json)
 
-    const json2 = [3,5,7]
+    const json2 = [3, 5, 7]
     const r2 = new ArrayNumber(json2);
     expect(r2.numbers).to.be.deep.equal(json2)
   })
 })
 
-const compositeJson = {
-  name: 'parent',
-  children: [{
-    name: 'child_1'
-  },{
-    name: 'child_2'
-  },{
-    name: 'child_3',
-    children: [{
-      name: 'child_3_1',
-    },{
-      name: 'child_3_2'
-    }]
-  }]
-}
-
-class CompositeItem extends Deneric {
-  name: string = ''
-  children!: CompositeItem[]
-
-  constructor(json?: object) {
-    super({
-      name: ['name', String],
-      children: ['children', Deneric.Array(CompositeItem)]
-    })
-    this.fromJson(json)
-  }
-}
 
 describe('Composite', () => {
   it('must be success when parse composite item', () => {
+    const compositeJson = {
+      name: 'parent',
+      children: [
+        {
+          name: 'child_1',
+          children: []
+        },
+        {
+          name: 'child_2',
+          children: []
+        },
+        {
+          name: 'child_3',
+          children: [
+            {
+              name: 'child_3_1',
+              children: []
+            },
+            {
+              name: 'child_3_2',
+              children: []
+            }
+          ]
+        }]
+    }
+
+    class CompositeItem extends Deneric {
+      name: string = ''
+      children: CompositeItem[] = []
+
+      constructor(json?: object) {
+        super({
+          name: ['name', String],
+          children: ['children', Deneric.Array(CompositeItem)]
+        })
+        this.fromJson(json)
+      }
+    }
     const r = new CompositeItem(compositeJson)
 
-    console.log('JSON', compositeJson)
-    console.log('ENTITY', r)
-    console.log('TO_JSON', r.toJson())
-    console.log('TO_JSON_stringify', JSON.stringify(r.toJson()))
+    expect(r.toJson()).to.be.deep.equal(compositeJson)
+  })
+})
+
+describe('clone', () => {
+  it('toJson must equal clone.toJson', () => {
+    const r = new Student(json1)
+    const json = r.toJson() as typeof json1
+    const jsonClone = r.clone().toJson() as typeof json1
+
+    expect(json).to.be.deep.equal(jsonClone)
+
+    const r2 = new ClassRoom()
+    r2.fromJson<ClassRoom>(json4)
+    const json2 = r2.toJson() as typeof json4
+    const json2Clone = r2.clone().toJson() as typeof json4
+    expect(json2).to.be.deep.equal(json2Clone)
+  })
+
+  it('clone composite', () => {
+    const compositeJson = {
+      name: 'parent',
+      children: [
+        {
+          name: 'child_1',
+          children: []
+        },
+        {
+          name: 'child_2',
+          children: []
+        },
+        {
+          name: 'child_3',
+          children: [
+            {
+              name: 'child_3_1',
+              children: []
+            },
+            {
+              name: 'child_3_2',
+              children: []
+            }
+          ]
+        }]
+    }
+
+    class CompositeItem extends Deneric {
+      name: string = ''
+      children: CompositeItem[] = []
+
+      constructor(json?: object) {
+        super({
+          name: ['name', String],
+          children: ['children', Deneric.Array(CompositeItem)]
+        })
+        this.fromJson(json)
+      }
+    }
+    const r = new CompositeItem(compositeJson)
+
+    expect(r.clone().toJson()).to.be.deep.equal(compositeJson)
+  })
+
+  it('clone complex', () => {
+    const j = {
+      name: 'My Class',
+      teacher: {
+        type: 'teacher',
+        name: 'Nguyen Van A',
+        age: 30
+      },
+      students: [
+        {
+          name: 'nguyen van A',
+          age: 12
+        },
+        {
+          name: 'nguyen van B',
+          age: 17
+        }
+      ]
+    }
+
+    class People extends Deneric {
+      type: string = ''
+
+      constructor(json?: object, schema?: DenericSchema) {
+        super({
+          type: ['type', String],
+          ...schema
+        })
+        if (!schema) {
+          this.fromJson(json)
+
+          switch (this.type) {
+            case 'teacher':
+              return new Teacher(json)
+            default:
+              return new Student(json)
+          }
+        }
+      }
+    }
+
+    class Teacher extends People {
+      constructor(json?: object) {
+        super(json, {
+          name: ['name', String],
+          age: ['age', Number]
+        })
+        this.fromJson(json)
+      }
+    }
+
+    class Student extends People {
+      constructor(json?: object) {
+        super(json, {
+          type: ['type', String, true],
+          name: ['name', String],
+          age: ['age', Number]
+        })
+        this.fromJson(json)
+      }
+    }
+
+    class MyClassRoom extends Deneric {
+      constructor(json?: object) {
+        super({
+          name: ['name', String],
+          teacher: ['teacher', People],
+          students: ['students', Deneric.Array(People)]
+        })
+        this.fromJson(json)
+      }
+    }
+
+    const r = new MyClassRoom(j)
+
+    expect(r.toJson()).to.be.deep.equal(j)
+    expect(r.clone().toJson()).to.be.deep.equal(j)
   })
 })
