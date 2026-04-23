@@ -1,7 +1,4 @@
-import get from 'lodash/get'
-import set from 'lodash/set'
-import cloneDeep from 'lodash/cloneDeep'
-import isObject from 'lodash/isObject'
+import { get, set, cloneDeep, isPlainObject } from './utils'
 
 type CommonType = StringConstructor | NumberConstructor | BooleanConstructor | ArrayConstructor | ObjectConstructor
 type SingleType = CommonType | Deneric | typeof Deneric
@@ -53,7 +50,7 @@ const Utils = Object.freeze({
       if (complexDataType.isArray) {
         return Array.isArray(data) ? data.map(item => Utils.getValueFromJson(item, complexDataType.itemType, Utils.getDefaultValue(complexDataType.itemType), strict)) : defaultValue
       }
-      if (complexDataType.isMap && isObject(data)) {
+      if (complexDataType.isMap && isPlainObject(data)) {
         return Object.keys(data).reduce((prev, key) => {
           set(prev, key, Utils.getValueFromJson(Utils.getValue(data, key), complexDataType.itemType, Utils.getDefaultValue(complexDataType.itemType), strict))
           return prev
@@ -80,7 +77,7 @@ const Utils = Object.freeze({
         case Array:
           return Array.isArray(data) ? data : defaultValue
         case Object:
-          return isObject(data) ? data : defaultValue
+          return isPlainObject(data) ? data : defaultValue
       }
     }
 
@@ -113,7 +110,7 @@ const Utils = Object.freeze({
       case Array:
         return Array.isArray(data) ? data : defaultValue
       case Object:
-        return isObject(data) ? cloneDeep(data) : defaultValue
+        return isPlainObject(data) ? cloneDeep(data) : defaultValue
     }
     if (dataType instanceof ComplexDataType) {
       const complexDataType = dataType as ComplexDataType
@@ -121,7 +118,7 @@ const Utils = Object.freeze({
         return Array.isArray(data) ? data.map(item => Utils.getValueFromDeneric(item, complexDataType.itemType, Utils.getDefaultValue(complexDataType.itemType))) : defaultValue
       }
       if (complexDataType.isMap) {
-        data = isObject(data) ? data : {}
+        data = isPlainObject(data) ? data : {}
         return Object.keys(data).reduce((prev, key) => {
           set(prev, key, Utils.getValueFromDeneric(data[key], complexDataType.itemType, Utils.getDefaultValue(complexDataType.itemType)))
           return prev

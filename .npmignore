@@ -1,8 +1,21 @@
+# source & tests (not needed in npm package)
+/src
+/test
+
+# config files
+tsup.config.ts
+tsconfig.json
+vitest.config.ts
+
 # dependencies
 /node_modules
 
 # misc
 .vscode
+.idea
 .DS_Store
+.git
+.gitignore
 
 npm-debug.log*
+yarn-error.log
