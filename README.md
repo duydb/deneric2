@@ -79,6 +79,8 @@ Schema is an object where each key maps to a tuple: `[dataPath, dataType, jsonIg
 | `Object`            | Plain object             | `['path', Object]`                           |
 | `Deneric.Array(T)`  | Typed array              | `['path', Deneric.Array(Number)]`            |
 | `Deneric.Map(T)`    | Map (Record) of type T   | `['path', Deneric.Map(MyClass)]`             |
+| `Deneric.Nullable(T)` | `T` or `null`          | `['path', Deneric.Nullable(Number)]`         |
+| `Deneric.Optional(T)` | `T` or `undefined` (omitted in `toJson()`) | `['path', Deneric.Optional(Deneric.Nullable(Number))]` |
 | Deneric subclass     | Nested entity            | `['path', MyClass]`                          |
 
 ## Full Example
@@ -173,15 +175,136 @@ temp.toJson()
 
 ### Strict vs Non-Strict Mode
 
-By default, `fromJson` uses **strict mode** — values with wrong types fallback to defaults.
+`strict` is the second argument of `fromJson(data, strict = true)` and is chosen per call — there is no
+per-field or global setting.
+
+| Mode                 | Valid type | Wrong type                                                  |
+| -------------------- | ---------- | ----------------------------------------------------------- |
+| strict (`true`)      | kept       | field default (`Nullable` → `null` or its declared default) |
+| non-strict (`false`) | kept       | coerced with `Number()`, `String()`, `Boolean()`, …         |
+
+`null` / `undefined` are never coerced in either mode: they follow the default or the wrapper.
 
 ```ts
-// Strict (default): wrong type → default value
-student.fromJson({ profile: { age: '12' } })      // age → -1 (default)
+class User extends Deneric {
+  age: number = -1
 
-// Non-strict: wrong type → coerced
-student.fromJson({ profile: { age: '12' } }, false) // age → 12 (coerced to number)
+  constructor(data?: any, strict = true) {
+    super({ age: ['profile.age', Number] })
+    this.fromJson(data, strict)
+  }
+}
+
+new User({ profile: { age: '12' } })        // age → -1 (strict: wrong type → default)
+new User({ profile: { age: '12' } }, false) // age → 12 (non-strict: coerced)
 ```
+
+`strict` is passed down to `Deneric.Array` / `Deneric.Map` items, but **not** to nested entities:
+a nested class is built with `new Child(data)`, so its own constructor decides the mode.
+
+### Null Handling
+
+By default, a missing or `null` value falls back to the field default, and a field without one falls back
+to the type default (`Number` → `0`, `String` → `''`, …). When `0` and "no data" must stay distinguishable,
+wrap the type:
+
+| Wrapper                 | `null`         | missing (`undefined`) | TS type                  |
+| ----------------------- | -------------- | --------------------- | ------------------------ |
+| `Deneric.Nullable(T)`   | `null`         | `null`                | `T \| null`              |
+| `Deneric.Optional(T)`   | handled by `T` | `undefined`           | `T \| undefined`         |
+| `Optional(Nullable(T))` | `null`         | `undefined`           | `T \| null \| undefined` |
+
+```ts
+class Product extends Deneric {
+  price: number | null = null
+  discount?: number | null
+  variants: (number | null)[] = []
+  owner: User | null = null
+
+  constructor(data?: any) {
+    super({
+      price: ['price', Deneric.Nullable(Number)],
+      discount: ['discount', Deneric.Optional(Deneric.Nullable(Number))],
+      variants: ['variants', Deneric.Array(Deneric.Nullable(Number))],
+      owner: ['owner', Deneric.Nullable(User)],
+    })
+    this.fromJson(data)
+  }
+}
+
+new Product({}).price                          // → null (not 0)
+new Product({}).discount                       // → undefined
+new Product({ discount: null }).discount       // → null
+new Product({ price: 0 }).price                // → 0
+new Product({ variants: [1, null] }).variants  // → [1, null]
+new Product({}).toJson()                       // → { price: null, variants: [], owner: null }
+```
+
+#### Evaluation order
+
+Wrappers apply outside-in. `Optional` runs first and returns `undefined` straight away, so `Nullable`
+never sees it and cannot turn it into `null`:
+
+```
+Optional(Nullable(Number))
+
+data ──► Optional: data === undefined ? ──yes──► undefined   (stops here)
+                         │ no
+                         ▼
+         Nullable: data === null ? ──yes──► null
+                         │ no
+                         ▼
+         Number (strict): typeof === 'number' ? ──yes──► data
+                                        │ no
+                                        ▼
+                                      null   (Nullable uses null as default)
+```
+
+`Optional(T)` alone only handles `undefined`; `null` goes to `T` (`Optional(Number)` turns `null` into `0`).
+Inside `Deneric.Array`, use `Nullable` — JSON arrays cannot hold `undefined`.
+
+#### Custom default for wrong types
+
+For `Nullable`, the default only applies to wrong types (strict) and `NaN` (non-strict) — `null` and
+missing keep their meaning. Resolution order: schema slot 4 → field initializer → `null`.
+
+```ts
+age: ['age', Deneric.Nullable(Number), false, -1]   // 1. schema default
+age: number | null = -1                              // 2. field initializer (no schema default)
+age: number | null = null                            // 3. nothing set → null
+```
+
+#### Results by type
+
+| JSON                 | `Number` (no default) | `Number` (default `-1`) | `Nullable(Number)` | `Optional(Nullable(Number))` | `Nullable(Number)` + default `0` |
+| -------------------- | --------------------- | ----------------------- | ------------------ | ---------------------------- | -------------------------------- |
+| `0`                  | `0`                   | `0`                     | `0`                | `0`                          | `0`                              |
+| `5`                  | `5`                   | `5`                     | `5`                | `5`                          | `5`                              |
+| `'0'` (strict)       | `0`                   | `-1`                    | `null`             | `null`                       | `0` (wrong type → default)       |
+| `'0'` (non-strict)   | `0`                   | `0`                     | `0`                | `0`                          | `0`                              |
+| `'abc'` (non-strict) | `NaN`                 | `NaN`                   | `null`             | `null`                       | `0`                              |
+| `null`               | `0`                   | `-1`                    | `null`             | `null`                       | `null`                           |
+| missing              | `0`                   | `-1`                    | `null`             | `undefined`                  | `null`                           |
+
+`0` is a value, never "missing": it is kept by every wrapper and emitted as `0` by `toJson()`.
+In non-strict mode `''` and `false` coerce to `0` (`Number()` semantics), also under `Nullable`.
+
+#### `toJson()`
+
+| Field value | `Number` (no default) | `Nullable(Number)` | `Optional(Nullable(Number))` |
+| ----------- | --------------------- | ------------------ | ---------------------------- |
+| `0`         | `{ age: 0 }`          | `{ age: 0 }`       | `{ age: 0 }`                 |
+| `null`      | `{ age: 0 }`          | `{ age: null }`    | `{ age: null }`              |
+| `undefined` | `{ age: 0 }`          | `{ age: null }`    | `{}` (key omitted)           |
+
+Omitting `undefined` Optional fields (and Map entries) suits PATCH payloads: missing means
+"leave unchanged", `null` means "clear".
+
+Keep display fallbacks such as `-` or `N/A` in the view layer (`price ?? '-'`), not as a schema default —
+a string default on a `Number` field breaks arithmetic and is sent back to the API by `toJson()`.
+
+An explicit `null` default in the schema (`['age', Number, false, null]`) is respected. A field initializer
+of `null` on a plain `Number` still falls back to `0` — use `Nullable(Number)` instead.
 
 ## Migration from v1.x
 
